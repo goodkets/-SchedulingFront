@@ -1,5 +1,6 @@
 <template>
   <div class="dashboard-container">
+    统计分析
     <component :is="currentRole" />
   </div>
 </template>
@@ -23,9 +24,9 @@ export default {
     ])
   },
   created() {
-    if (!this.roles.includes('admin')) {
-      this.currentRole = 'editorDashboard'
-    }
+    // if (!this.roles.includes('admin')) {
+    //   this.currentRole = 'editorDashboard'
+    // }
   }
 }
 </script>

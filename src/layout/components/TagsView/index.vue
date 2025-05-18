@@ -28,6 +28,24 @@
 <script>
 import ScrollPane from './ScrollPane'
 import path from 'path'
+import { constantRoutes } from '@/router'
+
+// 递归过滤路由
+function filterRoutes(routes, permissions) {
+  return routes.filter(route => {
+    if (route.meta && route.meta.permissions) {
+      const hasPermission = permissions === 'all' || route.meta.permissions.some(perm => permissions.includes(perm))
+      if (hasPermission && route.children) {
+        route.children = filterRoutes(route.children, permissions)
+      }
+      return hasPermission
+    }
+    if (route.children) {
+      route.children = filterRoutes(route.children, permissions)
+    }
+    return true
+  })
+}
 
 export default {
   components: { ScrollPane },
@@ -45,7 +63,12 @@ export default {
       return this.$store.state.tagsView.visitedViews
     },
     routes() {
-      return this.$store.state.permission.routes
+      const permissions = this.$store.state.user.permissions
+      if (permissions) {
+        return filterRoutes(constantRoutes, permissions)
+      }
+      return constantRoutes
+      // return this.$store.state.permission.routes
     }
   },
   watch: {
