@@ -2,7 +2,6 @@ import Vue from 'vue'
 import Router from 'vue-router'
 /* Layout */
 import Layout from '@/layout'
-import chartsRouter from './modules/charts'
 
 Vue.use(Router)
 
@@ -100,42 +99,6 @@ export const constantRoutes = [
       }
     ]
   },
-  {
-    path: '/test',
-    component: Layout,
-    // redirect: '/permission/page',
-    // alwaysShow: true,
-    // name: 'Permission',
-    // meta: {
-    //   title: 'Permission',
-    //   icon: 'lock'
-    // },
-    children: [
-      {
-        path: 'role',
-        component: () => import('@/views/permission/role'),
-        name: 'RolePermission',
-        meta: {
-          title: 'Role Permission',
-          icon: 'peoples'
-        }
-      }
-    ]
-  },
-
-  {
-    path: '/icon',
-    component: Layout,
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/icons/index'),
-        name: 'Icons',
-        meta: { title: 'Icons', icon: 'icon', noCache: true }
-      }
-    ]
-  },
-  chartsRouter,
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }
 ]
