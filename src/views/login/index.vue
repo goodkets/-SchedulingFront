@@ -51,6 +51,7 @@
 </template>
 
 <script>
+import { setToken } from '@/utils/auth'
 
 export default {
   name: 'Login',
@@ -143,6 +144,9 @@ export default {
           return false
         }
       })
+      // this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
+      // setToken('token')
+      // localStorage.setItem('permission', ['all'])
     },
     getOtherQuery(query) {
       return Object.keys(query).reduce((acc, cur) => {
