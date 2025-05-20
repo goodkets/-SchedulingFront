@@ -19,15 +19,28 @@
         </template>
       </el-table-column>
     </el-table>
+    <Pagination
+        :total="total"
+        :page="currentPage"
+        :limit="pageSize"
+        @pagination="handlePagination"
+      />
   </div>
 </template>
 
 <script>
 import { getSchedulingData } from '@/api/scheduling';
+import Pagination from '@/components/Pagination'
 export default {
+  components: {
+    Pagination,
+  },
   data() {
     return {
-      schedulingResults: []
+      schedulingResults: [],
+      currentPage: 1,
+      pageSize: 10,
+      total: 0,
     };
   },
   created() {

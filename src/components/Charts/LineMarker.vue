@@ -23,7 +23,7 @@ export default {
     },
     height: {
       type: String,
-      default: '400px'
+      default: '50vh'
     },
   },
   data() {
