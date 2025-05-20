@@ -14,7 +14,8 @@
         :header-cell-style="headerCellStyle"
         :cell-style="cellStyle"
         :row-style="rowStyle"
-        style="width: 100%">
+        style="width: 100%"
+        :loading="loading">
 
         <el-table-column
           prop="code"
@@ -24,7 +25,7 @@
 
         <el-table-column
           prop="name"
-          label="产品名称"
+          label="设备名称"
           min-width="150">
         </el-table-column>
 
@@ -32,14 +33,10 @@
           prop="type"
           label="类型"
           min-width="150"
-          :filters="[
-            { text: '继电器', value: '继电器' },
-            { text: '电容', value: '电容' },
-            { text: '电阻', value: '电阻' },
-          ]"
+
           :filter-method="filterType">
           <template slot-scope="scope">
-            <el-tag :type="getTypeTag(scope.row.type)" effect="dark" size="medium">{{ scope.row.type }}</el-tag>
+            <el-tag type="warning" effect="dark" size="medium">{{ scope.row.type }}</el-tag>
           </template>
         </el-table-column>
 
@@ -49,7 +46,7 @@
           min-width="180">
           <template slot-scope="scope">
             <el-link type="primary" @click="showMaterialDetail(scope.row)">
-              {{ formatMaterials(scope.row.materials) }}
+              {{ formatMaterials(scope.row.rawList) }}
             </el-link>
           </template>
         </el-table-column>
@@ -76,7 +73,8 @@
           min-width="150">
           <template slot-scope="scope">
             <div style="display: flex; align-items: center; justify-content: center;">
-              <span style="margin-right: 10px;">{{ scope.row.workers.length }}人</span>
+              <span style="margin-right: 10px;">{{ scope.row.workerList.length }}人</span>
+              <!-- 修改为传入设备对象 -->
               <el-button
                 type="primary"
                 size="small"
@@ -101,7 +99,7 @@
           label="保养日期"
           min-width="150">
           <template slot-scope="scope">
-            <span>{{ scope.row.maintenanceDate }}</span>
+            <span>{{ scope.row.maintenance }}</span>
           </template>
         </el-table-column>
 
@@ -115,12 +113,12 @@
         </el-table-column>
       </el-table>
     </el-card>
-    <Pagination
+    <!-- <Pagination
         :total="total"
         :page="currentPage"
         :limit="pageSize"
         @pagination="handlePagination"
-      />
+      /> -->
 
     <!-- 原材料详情弹窗 -->
     <el-dialog
@@ -129,10 +127,10 @@
       width="40%">
       <el-table :data="currentMaterials" border>
         <el-table-column prop="name" label="材料名称" width="180"></el-table-column>
-        <el-table-column prop="quantity" label="数量" width="120">
-          <template slot-scope="scope">
+        <el-table-column prop="quantity" label="数量" width="180">
+          <template slot-scope="scope" >
             <el-input-number
-              v-model="scope.row.quantity"
+              v-model="scope.row.num"
               size="mini"
               :min="1"
               @change="saveMaterialChange(scope.row)">
@@ -153,8 +151,8 @@
       :visible.sync="workerDialogVisible"
       width="50%">
       <el-table :data="currentWorkers" border>
-        <el-table-column prop="id" label="工号" width="100"></el-table-column>
-        <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+        <el-table-column prop="nameNumber" label="工号" width="100"></el-table-column>
+        <el-table-column prop="userName" label="姓名" width="120"></el-table-column>
         <el-table-column prop="status" label="状态" width="120">
           <template slot-scope="scope">
             <el-select
@@ -164,11 +162,10 @@
               @change="saveWorkerStatus(scope.row)">
               <el-option label="忙碌" value="忙碌"></el-option>
               <el-option label="休息" value="休息"></el-option>
-              <el-option label="请假" value="请假"></el-option>
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column prop="position" label="岗位"></el-table-column>
+        <el-table-column prop="job" label="岗位"></el-table-column>
         <el-table-column label="操作" width="120">
           <template slot-scope="scope">
             <el-button
@@ -191,6 +188,7 @@
 
 <script>
 import Pagination from '@/components/Pagination'
+import { getResourceData } from '@/api/resource'
 export default {
   name: 'DeviceManagement',
   components: {
@@ -230,77 +228,32 @@ export default {
     this.fetchDeviceData();
   },
   methods: {
-    fetchDeviceData() {
-      // 模拟API请求
-      this.deviceList = [
-        {
-          id: 1,
-          code: 'DEV001',
-          name: '主生产线继电器',
-          type: '继电器',
-          materials: [
-            { name: '铜线', quantity: 5, unit: '米' },
-            { name: '塑料外壳', quantity: 2, unit: '个' },
-            { name: '铁芯', quantity: 3, unit: '个' },
-
-          ],
-          status: true,
-          workers: [
-            { id: 'W001', name: '张三', status: '忙碌', position: '操作员' },
-            { id: 'W002', name: '李四', status: '忙碌', position: '质检员' }
-          ],
-          maintenanceDate: '2025-06-15',
-          output: 1200
-        },
-        {
-          id: 2,
-          code: 'DEV002',
-          name: '电容组A',
-          type: '电容',
-          materials: [
-            { name: '铝箔', quantity: 8, unit: '卷' },
-            { name: '电解液', quantity: 1, unit: '升' },
-            { name: '塑料外壳', quantity: 2, unit: '个' }
-          ],
-          status: false,
-          workers: [
-            { id: 'W003', name: '王五', status: '休息', position: '操作员' }
-          ],
-          maintenanceDate: '2025-05-10',
-          output: 800
-        },
-        {
-          id: 3,
-          code: 'DEV003',
-          name: '电阻生产线',
-          type: '电阻',
-          materials: [
-            { name: '碳膜', quantity: 10, unit: '片' },
-            { name: '金属引脚', quantity: 20, unit: '对' },
-            { name: '陶瓷基板', quantity: 5, unit: '块' }
-          ],
-          status: true,
-          workers: [
-            { id: 'W004', name: '赵六', status: '忙碌', position: '操作员' },
-            { id: 'W005', name: '钱七', status: '请假', position: '质检员' },
-            { id: 'W006', name: '孙八', status: '忙碌', position: '操作员' }
-          ],
-          maintenanceDate: '2025-07-01',
-          output: 1500
+    async fetchDeviceData() {
+      this.loading = true;
+      try {
+        const response = await getResourceData({
+          page: this.currentPage,
+          pageSize: this.pageSize
+        });
+        if (response.status === 0) {
+          this.deviceList = response.data.map(device => {
+            // 将 status 字符串转换为布尔值
+            device.status = device.status === 'true';
+            return device;
+          });
+        } else {
+          this.$message.error('获取设备数据失败：' + response.message);
         }
-      ];
+      } catch (error) {
+        console.error('获取设备数据失败:', error);
+        this.$message.error('获取设备数据失败，请稍后重试');
+      } finally {
+        this.loading = false;
+      }
     },
     refreshData() {
       this.fetchDeviceData();
       this.$message.success('数据已刷新');
-    },
-    getTypeTag(type) {
-      const map = {
-        '继电器': 'primary',
-        '电容': 'success',
-        '电阻': 'warning'
-      };
-      return map[type] || '';
     },
     filterType(value, row) {
       return row.type === value;
@@ -312,7 +265,8 @@ export default {
     },
     showMaterialDetail(row) {
       this.currentDevice = row;
-      this.currentMaterials = JSON.parse(JSON.stringify(row.materials));
+      // 确保使用 rawList
+      this.currentMaterials = JSON.parse(JSON.stringify(row.rawList));
       this.materialDialogVisible = true;
     },
     saveMaterialChange(material) {
@@ -320,27 +274,36 @@ export default {
       // 这里可以添加保存到后端API的逻辑
     },
     saveMaterialChanges() {
-      this.currentDevice.materials = this.currentMaterials;
+      // 确保更新 rawList
+      this.currentDevice.rawList = this.currentMaterials;
       this.materialDialogVisible = false;
       this.$message.success('原材料修改已保存');
     },
     getOverallWorkerStatus(row) {
-      if (row.workers.length === 0) return '无人';
-      const busyCount = row.workers.filter(w => w.status === '忙碌').length;
-      if (busyCount === row.workers.length) return '全部忙碌';
+      if (row.workerList.length === 0) return '无人';
+      const busyCount = row.workerList.filter(w => w.status == 1).length;
+      if (busyCount === row.workerList.length) return '全部忙碌';
       if (busyCount === 0) return '全部休息';
       return `${busyCount}人忙碌`;
     },
     getWorkerStatusTag(row) {
-      if (row.workers.length === 0) return 'info';
-      const busyCount = row.workers.filter(w => w.status === '忙碌').length;
-      if (busyCount === row.workers.length) return 'danger';
+      if (row.workerList.length === 0) return 'info';
+      const busyCount = row.workerList.filter(w => w.status == 1).length;
+      if (busyCount === row.workerList.length) return 'danger';
       if (busyCount === 0) return 'success';
       return 'warning';
     },
     showWorkerManagement(row) {
       this.currentDevice = row;
-      this.currentWorkers = JSON.parse(JSON.stringify(row.workers));
+      // 修改为使用 workerList 并转换状态值
+      this.currentWorkers = JSON.parse(JSON.stringify(row.workerList)).map(worker => {
+        if (worker.status == 0) {
+          worker.status = '休息';
+        } else if (worker.status == 1) {
+          worker.status = '忙碌';
+        }
+        return worker;
+      });
       this.workerDialogVisible = true;
     },
     addWorker() {
@@ -371,7 +334,15 @@ export default {
       });
     },
     saveWorkerChanges() {
-      this.currentDevice.workers = this.currentWorkers;
+      // 在保存时将状态文本转换回数字
+      this.currentDevice.workerList = this.currentWorkers.map(worker => {
+        if (worker.status === '休息') {
+          worker.status = 0;
+        } else if (worker.status === '忙碌') {
+          worker.status = 1;
+        }
+        return worker;
+      });
       this.workerDialogVisible = false;
       this.$message.success('工人信息已保存');
     },

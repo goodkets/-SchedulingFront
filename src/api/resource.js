@@ -1,8 +1,8 @@
 import request from '@/utils/request'
-//排产
-export function getSchedulingData(data) {
+//设备管理
+export function getResourceData(data) {
   return request({
-    url: '/getSchedulingData',
+    url: '/getResourceData',
     method: 'post',
     data
   })

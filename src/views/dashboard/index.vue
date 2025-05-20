@@ -103,6 +103,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 90px);
+  overflow-y: scroll;
   padding: 20px;
   gap: 20px;
 }
@@ -217,7 +218,7 @@ export default {
 
 .order-item {
   margin-bottom: 20px; /* 增大订单之间的间距 */
-  margin-top: 75px;
+  margin-top: 30px;
 }
 
 .order-name {
