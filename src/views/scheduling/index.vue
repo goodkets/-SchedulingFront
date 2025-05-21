@@ -4,27 +4,18 @@
     <el-table :data="schedulingResults" style="width: 100%" stripe border>
       <el-table-column align="center" prop="name" label="产品名称" />
       <el-table-column align="center" prop="process" label="工序" />
-      <el-table-column  align="center" prop="device" label="设备" />
-      <el-table-column  align="center" prop="start_time" label="计划开始时间" />
+      <el-table-column align="center" prop="device" label="设备" />
+      <el-table-column align="center" prop="start_time" label="计划开始时间" />
       <el-table-column align="center" prop="end_time" label="计划结束时间" />
       <el-table-column align="center" label="状态">
         <template #default="scope">
-          <el-tag
-            :type="getStatusType(scope.row.status)"
-            effect="light"
-            class="status-tag"
-          >
+          <el-tag :type="getStatusType(scope.row.status)" effect="light" class="status-tag">
             {{ getStatusText(scope.row.status) }}
           </el-tag>
         </template>
       </el-table-column>
     </el-table>
-    <Pagination
-        :total="total"
-        :page="currentPage"
-        :limit="pageSize"
-        @pagination="handlePagination"
-      />
+    <Pagination :total="total" :page="currentPage" :limit="pageSize" @pagination="handlePagination" />
   </div>
 </template>
 
@@ -47,10 +38,19 @@ export default {
     this.fetchSchedulingData();
   },
   methods: {
+    // 处理分页事件
+    handlePagination({ page, limit }) {
+      this.currentPage = page
+      this.pageSize = limit
+      this.fetchSchedulingData()
+    },
     async fetchSchedulingData() {
       try {
-        const response = await getSchedulingData();
-        this.schedulingResults = response.data;
+        const response = await getSchedulingData({ page: this.currentPage, pageSize: this.pageSize });
+        if(response.status === 0) {
+          this.schedulingResults = response.data.items;
+          this.total = response.data.pagination.total
+        }
       } catch (error) {
         console.error('获取排产数据失败:', error);
         this.$message.error('获取排产数据失败，请稍后重试');
@@ -123,5 +123,4 @@ export default {
 }
 </style>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>
