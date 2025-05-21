@@ -1,20 +1,22 @@
 <template>
   <div class="scheduling-module">
     <h2 class="module-title">排产结果</h2>
-    <el-table :data="schedulingResults" style="width: 100%" stripe border>
-      <el-table-column align="center" prop="name" label="产品名称" />
-      <el-table-column align="center" prop="process" label="工序" />
-      <el-table-column align="center" prop="device" label="设备" />
-      <el-table-column align="center" prop="start_time" label="计划开始时间" />
-      <el-table-column align="center" prop="end_time" label="计划结束时间" />
-      <el-table-column align="center" label="状态">
-        <template #default="scope">
-          <el-tag :type="getStatusType(scope.row.status)" effect="light" class="status-tag">
-            {{ getStatusText(scope.row.status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-container">
+      <el-table :data="schedulingResults" stripe border>
+        <el-table-column align="center" prop="name" label="产品名称" />
+        <el-table-column align="center" prop="process" label="工序" />
+        <el-table-column align="center" prop="device" label="设备" />
+        <el-table-column align="center" prop="start_time" label="计划开始时间" />
+        <el-table-column align="center" prop="end_time" label="计划结束时间" />
+        <el-table-column align="center" label="状态">
+          <template #default="scope">
+            <el-tag :type="getStatusType(scope.row.status)" effect="light" class="status-tag">
+              {{ getStatusText(scope.row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
     <Pagination :total="total" :page="currentPage" :limit="pageSize" @pagination="handlePagination" />
   </div>
 </template>
@@ -58,6 +60,8 @@ export default {
     },
     // 根据状态返回不同的标签类型
     getStatusType(status) {
+      // 统一使用字符串比较
+      status = String(status);
       switch (status) {
         case '-1':
           return 'info';
@@ -71,6 +75,8 @@ export default {
     },
     // 根据状态返回不同的文本描述
     getStatusText(status) {
+      // 统一使用字符串比较
+      status = String(status);
       switch (status) {
         case '-1':
           return '未开始';
@@ -101,9 +107,13 @@ export default {
   margin-bottom: 20px;
 }
 
+.table-container {
+  max-height: 600px;
+  overflow: auto;
+}
+
 .el-table {
-  background-color: #fff;
-  border-radius: 4px;
+  width: 100%;
 }
 
 .el-table__header th {
@@ -120,6 +130,31 @@ export default {
   padding: 0 8px;
   font-size: 12px;
   border-radius: 4px;
+}
+
+// 如果你想自定义颜色，可以添加以下样式
+.el-tag.info {
+  background-color: #e6f7ff;
+  border-color: #91d5ff;
+  color: #1890ff;
+}
+
+.el-tag.warning {
+  background-color: #fffbe6;
+  border-color: #ffe58f;
+  color: #faad14;
+}
+
+.el-tag.success {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+}
+
+.el-tag.default {
+  background-color: #fafafa;
+  border-color: #d9d9d9;
+  color: #222;
 }
 </style>
 
