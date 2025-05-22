@@ -42,18 +42,18 @@
             <div style="display: flex; align-items: center; justify-content: center;">
               <span style="margin-right: 10px;">{{ scope.row.workerList.length }}人</span>
               <!-- 修改为传入设备对象 -->
-              <el-button type="primary" size="small" @click="showWorkerManagement(scope.row)">管理</el-button>
+              <!-- <el-button type="primary" size="small" @click="showWorkerManagement(scope.row)">管理</el-button> -->
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="workerStatus" label="工人状态" min-width="120">
+        <!-- <el-table-column prop="workerStatus" label="工人状态" min-width="120">
           <template slot-scope="scope">
             <el-tag :type="getWorkerStatusTag(scope.row)" effect="plain" size="medium">
               {{ getOverallWorkerStatus(scope.row) }}
             </el-tag>
           </template>
-        </el-table-column>
+        </el-table-column> -->
 
         <el-table-column prop="maintenanceDate" label="保养日期" min-width="150">
           <template slot-scope="scope">
@@ -80,14 +80,19 @@
     <!-- 原材料详情弹窗 -->
     <el-dialog title="原材料详情" :visible.sync="materialDialogVisible" width="40%">
       <el-table :data="currentMaterials" border>
-        <el-table-column prop="name" label="材料名称" width="180"></el-table-column>
-        <el-table-column prop="quantity" label="数量" width="180">
+        <el-table-column prop="name" label="材料名称" width="150"></el-table-column>
+        <el-table-column prop="quantity" label="数量" width="150">
           <template slot-scope="scope">
-            <el-input-number v-model="scope.row.num" size="mini" :min="1" @change="saveMaterialChange(scope.row)">
+            <el-input-number  v-model="scope.row.num" size="mini" :min="1" @change="saveMaterialChange(scope.row)">
             </el-input-number>
           </template>
         </el-table-column>
-        <el-table-column prop="unit" label="单位"></el-table-column>
+        <el-table-column label="剩余总数" width="120">
+          <template slot-scope="scope">
+            <span>{{ getRemainingTotal(scope.row.name) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="unit" label="单位" width="80"></el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
         <el-button @click="materialDialogVisible = false">关闭</el-button>
@@ -148,7 +153,7 @@
 
 <script>
 import Pagination from '@/components/Pagination'
-import { getResourceData, updateRowStatus, updateWorkerNum, updateResourceAndWorkerStatus, addWorker, deleteWorker } from '@/api/resource'
+import { getResourceData, updateWorkerNum, updateResourceAndWorkerStatus, addWorker, deleteWorker, getRawMaterialCount, updateRawMaterialCount } from '@/api/resource'
 export default {
   name: 'DeviceManagement',
   components: {
@@ -170,6 +175,7 @@ export default {
       maintenanceDialogVisible: false,
       currentMaintenanceDate: '',
       currentDeviceForMaintenance: null,
+      raeTotal:[],
       headerCellStyle: {
         background: '#f5f7fa',
         color: '#303133',
@@ -190,6 +196,7 @@ export default {
   },
   created() {
     this.fetchDeviceData();
+    this.getCountRaw();
   },
   computed: {
     workerList() {
@@ -197,6 +204,13 @@ export default {
     }
   },
   methods: {
+    getCountRaw() {
+      getRawMaterialCount().then(res => {
+        if (res.status == 0) {
+          this.raeTotal = res.data;
+        }
+      })
+    },
     async fetchDeviceData() {
       this.loading = true;
       try {
@@ -242,32 +256,45 @@ export default {
       this.currentMaterials = JSON.parse(JSON.stringify(row.rawList));
       this.materialDialogVisible = true;
     },
-    saveMaterialChange(material) {
-      console.log('材料数量修改', material);
-      // 这里可以添加保存到后端API的逻辑
-    },
-    saveMaterialChanges() {
-      // 准备要发送的数据，包含所有原材料的ID和数量
-      const materialsData = {
-        id: this.currentDevice.id, // 设备ID
-        materials: this.currentMaterials.map(material => ({
-          id: material.id,
-          num: material.num
-        }))
-      };
+    // 在 methods 对象中添加以下方法
 
-      // 调用API保存所有原材料数量变更
-      updateRowStatus(materialsData)
-        .then(response => {
-          if (response.status === 0) {
-            // 确保更新 rawList
-            this.currentDevice.rawList = this.currentMaterials;
-            this.materialDialogVisible = false;
-          }
-        })
-        .catch(error => {
-          console.error('保存原材料修改失败:', error);
-        });
+    // 获取指定原材料的剩余总数
+    getRemainingTotal(materialName) {
+    const material = this.raeTotal.find(item => item.name === materialName);
+    console.log(material,111);
+    return material ? material.total : 0;
+    },
+
+    // 修改 saveMaterialChange 方法
+    saveMaterialChange(material) {
+      // 检查是否有足够的原材料,返回name
+      const row = this.raeTotal.find(item => item.name === material.name);
+      if(row.total < material.num) {
+        return this.$message.warning('库存不足');
+      }
+      //修改对应的resTotal对应的total
+      row.total --;
+    },
+    // 修改 saveMaterialChanges 方法
+    saveMaterialChanges() {
+
+    // 调用API保存所有原材料数量变更
+    updateRawMaterialCount(this.raeTotal)
+    .then(response => {
+    if (response.status === 0) {
+    // 确保更新 rawList
+    this.currentDevice.rawList = this.currentMaterials;
+    this.materialDialogVisible = false;
+    this.$message.success('原材料数量修改成功');
+
+    // 更新原材料总数数据
+    this.getCountRaw();
+    }
+    })
+    .catch(error => {
+    console.error('保存原材料修改失败:', error);
+    // this.$message.error('保存原材料修改失败，请稍后重试');
+    });
     },
     getOverallWorkerStatus(row) {
       if (row.workerList.length === 0) return '无人';

@@ -56,13 +56,13 @@ export default {
         // 模拟获取近七天正在运行的机器数据
         // 实际使用时替换为真实的接口调用
         const mockData = [
-          { date: this.xData[0], deviceCount: 10 },
-          { date: this.xData[1], deviceCount: 12 },
-          { date: this.xData[2], deviceCount: 15 },
-          { date: this.xData[3], deviceCount: 13 },
-          { date: this.xData[4], deviceCount: 11 },
-          { date: this.xData[5], deviceCount: 9 },
-          { date: this.xData[6], deviceCount: 14 }
+          { date: this.xData[0], deviceCount: 1 },
+          { date: this.xData[1], deviceCount: 3 },
+          { date: this.xData[2], deviceCount: 2 },
+          { date: this.xData[3], deviceCount: 1 },
+          { date: this.xData[4], deviceCount: 2 },
+          { date: this.xData[5], deviceCount: 3 },
+          { date: this.xData[6], deviceCount: 3 }
         ]
         this.yData = mockData.map(item => item.deviceCount)
         this.setChartOption()

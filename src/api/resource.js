@@ -54,3 +54,19 @@ export function deleteWorker(data) {
     data
   })
 }
+
+export function getRawMaterialCount(data) {
+  return request({
+    url: '/getRawMaterialCount',
+    method: 'post',
+    data
+  })
+}
+
+export function updateRawMaterialCount(data) {
+  return request({
+    url: '/updateRawMaterialCount',
+    method: 'post',
+    data
+  })
+}

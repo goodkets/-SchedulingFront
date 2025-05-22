@@ -6,7 +6,7 @@
         <template slot="header">
           <div class="card-header">
             <i class="el-icon-date"></i>
-            <span>今日总任务数</span>
+            <span>未交付总订单数</span>
           </div>
         </template>
         <p class="module-data">{{ totalTasks }}</p>
@@ -15,7 +15,7 @@
         <template slot="header">
           <div class="card-header">
             <i class="el-icon-check"></i>
-            <span>已完成任务数</span>
+            <span>已完成订单</span>
           </div>
         </template>
         <p class="module-data">{{ completedTasks }}</p>
@@ -24,7 +24,7 @@
         <template slot="header">
           <div class="card-header">
             <i class="el-icon-time"></i>
-            <span>设备进行中的数据</span>
+            <span>设备使用</span>
           </div>
         </template>
         <p class="module-data">{{ inProgressData }}</p>
@@ -48,11 +48,11 @@
         <template slot="header">
           <div class="card-header">
             <i class="el-icon-s-order"></i>
-            <span>订单进度</span>
+            <span>订单进度（高优先级的订单）</span>
           </div>
         </template>
         <div v-for="(order, index) in orders" :key="index" class="order-item">
-          <div class="order-name">{{ order.name }}</div>
+          <div class="order-name">{{ order.order_no }}</div>
           <div class="body">
             <el-progress
             :percentage="order.progress"
@@ -69,6 +69,7 @@
 
 <script>
 import LineMarker from '@/components/Charts/LineMarker.vue';
+import {orderProgress} from '@/api/dashboard';
 
 export default {
   components: {
@@ -80,15 +81,16 @@ export default {
       completedTasks: 4,
       inProgressData: '4/10',
       // 模拟订单数据
-      orders: [
-        { name: '订单 1', progress: 40 },
-        { name: '订单 2', progress: 60 },
-        { name: '订单 3', progress: 80 },
-        { name: '订单 4', progress: 30 },
-        { name: '订单 5', progress: 70 },
-        { name: '订单 6', progress: 50 }
-      ]
+      orders: []
     };
+  },
+  created() {
+    orderProgress().then(res => {
+      this.orders = res.data.list;
+      this.totalTasks = res.data.totalOrders
+      this.completedTasks = res.data.deliveredOrders
+      this.inProgressData = res.data.inProgressData
+    });
   },
   methods: {
     formatProgress(percentage) {
@@ -219,6 +221,15 @@ export default {
 .order-item {
   margin-bottom: 20px; /* 增大订单之间的间距 */
   margin-top: 30px;
+  transition: all 0.3s ease; /* 添加过渡效果 */
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.order-item:hover {
+  transform: scale(1.05); /* 鼠标悬停时放大 */
+  background-color: rgba(64, 158, 255, 0.05); /* 添加轻微背景色 */
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
 }
 
 .order-name {

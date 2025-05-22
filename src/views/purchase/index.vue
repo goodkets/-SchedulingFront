@@ -25,6 +25,7 @@ v-model="searchQuery" placeholder="搜索订单编号或产品名称" clearable 
         <el-table-column prop="order_no" label="订单编号" />
         <el-table-column prop="name" label="产品名称" />
         <el-table-column prop="quantity" label="数量" />
+        <el-table-column prop="type" label="类型" />
         <el-table-column prop="due_data" label="交付时间">
           <template #default="scope">
             {{ formatDate(scope.row.due_data) }}
@@ -48,9 +49,6 @@ v-model="searchQuery" placeholder="搜索订单编号或产品名称" clearable 
         <el-table-column label="操作" fixed="right" width="250">
           <template #default="scope">
             <div class="action-buttons">
-              <!-- <el-button size="small" @click="handleView(scope.row)" class="action-button">
-                <i class="el-icon-view"></i> 查看
-              </el-button> -->
               <el-button size="small" type="warning" @click="handleEdit(scope.row)" class="action-button">
                 <i class="el-icon-edit"></i> 编辑
               </el-button>
@@ -87,6 +85,13 @@ v-model="searchQuery" placeholder="搜索订单编号或产品名称" clearable 
         <el-form-item label="数量" prop="quantity">
           <el-input-number v-model="form.quantity" :min="1"></el-input-number>
         </el-form-item>
+        <el-form-item label="类型" prop="type">
+          <el-select v-model="form.type" placeholder="请选择类型">
+            <el-option label="电容" value="电容"></el-option>
+            <el-option label="电阻" value="电阻"></el-option>
+            <el-option label="继电器" value="继电器"></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="交付日期" prop="due_data">
           <el-date-picker v-model="form.due_data" type="date" placeholder="选择交付日期" format="yyyy-MM-dd"
             value-format="yyyy-MM-dd"></el-date-picker>
@@ -101,8 +106,8 @@ v-model="searchQuery" placeholder="搜索订单编号或产品名称" clearable 
         <el-form-item label="状态" prop="status">
           <el-select v-model="form.status" placeholder="请选择状态" :disabled="!isEdit">
             <el-option label="未交付" value="-1"></el-option>
-            <el-option label="已交付" value="0"></el-option>
-            <el-option label="生产中" value="1"></el-option>
+            <el-option label="已交付" value="1"></el-option>
+            <el-option label="生产中" value="0"></el-option>
           </el-select>
         </el-form-item>
       </el-form>
@@ -145,7 +150,8 @@ export default {
         quantity: 1,
         due_data: '',
         priority: '',
-        status: '未交付'
+        status: '未交付',
+        type: ''
       },
       rules: {
         order_no: [
@@ -185,7 +191,6 @@ export default {
           pageSize: this.pageSize,
           searchParam: this.searchQuery
         })
-        console.log(res)
         // 假设接口返回的数据结构为 { data: { list: [], total: 0 } }
         this.orders = res.data || []
         this.total = res.total || 0
@@ -213,7 +218,8 @@ export default {
         quantity: 1,
         due_data: '',
         priority: '',
-        status: '-1' // 初始化状态值为 -1（未交付）
+        status: '-1', // 初始化状态值为 -1（未交付）
+        type:''
       }
     },
     // 关闭模态框
@@ -333,9 +339,9 @@ export default {
       switch (parseInt(status)) {
         case -1:
           return '未交付';
-        case 0:
-          return '已交付';
         case 1:
+          return '已交付';
+        case 0:
           return '生产中';
         default:
           return '未知状态';

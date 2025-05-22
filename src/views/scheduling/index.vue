@@ -50,8 +50,35 @@ export default {
       try {
         const response = await getSchedulingData({ page: this.currentPage, pageSize: this.pageSize });
         if(response.status === 0) {
-          this.schedulingResults = response.data.items;
-          this.total = response.data.pagination.total
+          // 获取原始数据
+          let results = response.data.items;
+
+          // 定义状态优先级映射（生产中 > 未生产 > 已完成）
+          const statusPriority = {
+            '0': 0,  // 生产中（进行中）- 最高优先级
+            '-1': 1, // 未生产（未开始）- 次高优先级
+            '1': 2   // 已完成 - 最低优先级
+          };
+
+          // 按状态优先级和结束时间排序
+          results.sort((a, b) => {
+            // 首先按状态优先级排序
+            const statusA = String(a.status);
+            const statusB = String(b.status);
+
+            // 如果状态优先级不同，按优先级排序
+            if (statusPriority[statusA] !== statusPriority[statusB]) {
+              return statusPriority[statusA] - statusPriority[statusB];
+            }
+
+            // 如果状态相同，按结束时间降序排序
+            const endTimeA = new Date(a.end_time);
+            const endTimeB = new Date(b.end_time);
+            return endTimeB - endTimeA; // 降序排列
+          });
+
+          this.schedulingResults = results;
+          this.total = response.data.pagination.total;
         }
       } catch (error) {
         console.error('获取排产数据失败:', error);
