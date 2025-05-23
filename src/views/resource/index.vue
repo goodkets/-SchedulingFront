@@ -37,15 +37,15 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="workers" label="工人" min-width="150">
+        <!-- <el-table-column prop="workers" label="工人" min-width="150">
           <template slot-scope="scope">
             <div style="display: flex; align-items: center; justify-content: center;">
               <span style="margin-right: 10px;">{{ scope.row.workerList.length }}人</span>
-              <!-- 修改为传入设备对象 -->
-              <!-- <el-button type="primary" size="small" @click="showWorkerManagement(scope.row)">管理</el-button> -->
+              修改为传入设备对象
+              <el-button type="primary" size="small" @click="showWorkerManagement(scope.row)">管理</el-button>
             </div>
           </template>
-        </el-table-column>
+        </el-table-column> -->
 
         <!-- <el-table-column prop="workerStatus" label="工人状态" min-width="120">
           <template slot-scope="scope">
@@ -79,20 +79,20 @@
 
     <!-- 原材料详情弹窗 -->
     <el-dialog title="原材料详情" :visible.sync="materialDialogVisible" width="40%">
-      <el-table :data="currentMaterials" border>
-        <el-table-column prop="name" label="材料名称" width="150"></el-table-column>
-        <el-table-column prop="quantity" label="数量" width="150">
+      <el-table :data="currentMaterials" border >
+        <el-table-column prop="name" label="材料名称" align="center" ></el-table-column>
+        <el-table-column prop="quantity" label="数量" align="center">
           <template slot-scope="scope">
-            <el-input-number  v-model="scope.row.num" size="mini" :min="1" @change="saveMaterialChange(scope.row)">
+            <el-input-number  v-model="scope.row.num" size="mini" :min="1" >
             </el-input-number>
           </template>
         </el-table-column>
-        <el-table-column label="剩余总数" width="120">
+        <!-- <el-table-column label="剩余总数" width="120">
           <template slot-scope="scope">
             <span>{{ getRemainingTotal(scope.row.name) }}</span>
           </template>
-        </el-table-column>
-        <el-table-column prop="unit" label="单位" width="80"></el-table-column>
+        </el-table-column> -->
+        <el-table-column prop="unit" label="单位" align="center"></el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
         <el-button @click="materialDialogVisible = false">关闭</el-button>
@@ -101,7 +101,7 @@
     </el-dialog>
 
     <!-- 工人管理弹窗 -->
-    <el-dialog title="工人管理" :visible.sync="workerDialogVisible" width="50%">
+    <!-- <el-dialog title="工人管理" :visible.sync="workerDialogVisible" width="50%">
       <el-table :data="workerList" border>
         <el-table-column prop="nameNumber" label="工号" width="100"></el-table-column>
         <el-table-column label="姓名" width="120">
@@ -137,7 +137,7 @@
         <el-button @click="workerDialogVisible = false">关闭</el-button>
         <el-button type="primary" @click="saveWorkerChanges">保存修改</el-button>
       </span>
-    </el-dialog>
+    </el-dialog> -->
     <!-- 保养日期编辑弹窗 -->
     <el-dialog title="修改保养日期" :visible.sync="maintenanceDialogVisible" width="30%">
       <el-date-picker v-model="currentMaintenanceDate" type="date" placeholder="选择日期" value-format="yyyy-MM-dd"
@@ -153,7 +153,7 @@
 
 <script>
 import Pagination from '@/components/Pagination'
-import { getResourceData, updateWorkerNum, updateResourceAndWorkerStatus, addWorker, deleteWorker, getRawMaterialCount, updateRawMaterialCount } from '@/api/resource'
+import { getResourceData, updateResourceAndWorkerStatus, updateRowStatus } from '@/api/resource'
 export default {
   name: 'DeviceManagement',
   components: {
@@ -175,7 +175,6 @@ export default {
       maintenanceDialogVisible: false,
       currentMaintenanceDate: '',
       currentDeviceForMaintenance: null,
-      raeTotal:[],
       headerCellStyle: {
         background: '#f5f7fa',
         color: '#303133',
@@ -196,7 +195,7 @@ export default {
   },
   created() {
     this.fetchDeviceData();
-    this.getCountRaw();
+    // this.getCountRaw();
   },
   computed: {
     workerList() {
@@ -204,13 +203,6 @@ export default {
     }
   },
   methods: {
-    getCountRaw() {
-      getRawMaterialCount().then(res => {
-        if (res.status == 0) {
-          this.raeTotal = res.data;
-        }
-      })
-    },
     async fetchDeviceData() {
       this.loading = true;
       try {
@@ -259,42 +251,33 @@ export default {
     // 在 methods 对象中添加以下方法
 
     // 获取指定原材料的剩余总数
-    getRemainingTotal(materialName) {
-    const material = this.raeTotal.find(item => item.name === materialName);
-    console.log(material,111);
-    return material ? material.total : 0;
-    },
+    // getRemainingTotal(materialName) {
+    // const material = this.raeTotal.find(item => item.name === materialName);
+    // console.log(material,111);
+    // return material ? material.total : 0;
+    // },
 
     // 修改 saveMaterialChange 方法
-    saveMaterialChange(material) {
-      // 检查是否有足够的原材料,返回name
-      const row = this.raeTotal.find(item => item.name === material.name);
-      if(row.total < material.num) {
-        return this.$message.warning('库存不足');
-      }
-      //修改对应的resTotal对应的total
-      row.total --;
-    },
+    // saveMaterialChange(material) {
+    //   // 检查是否有足够的原材料,返回name
+    //   const row = this.raeTotal.find(item => item.name === material.name);
+    //   if(row.total < material.num) {
+    //     return this.$message.warning('库存不足');
+    //   }
+    //   //修改对应的resTotal对应的total
+    //   row.total --;
+    // },
     // 修改 saveMaterialChanges 方法
     saveMaterialChanges() {
-
-    // 调用API保存所有原材料数量变更
-    updateRawMaterialCount(this.raeTotal)
-    .then(response => {
-    if (response.status === 0) {
-    // 确保更新 rawList
-    this.currentDevice.rawList = this.currentMaterials;
-    this.materialDialogVisible = false;
-    this.$message.success('原材料数量修改成功');
-
-    // 更新原材料总数数据
-    this.getCountRaw();
-    }
-    })
-    .catch(error => {
-    console.error('保存原材料修改失败:', error);
-    // this.$message.error('保存原材料修改失败，请稍后重试');
-    });
+      updateRowStatus({materials:this.currentMaterials}).then(response => {
+        if (response.status === 0) {
+          // this.$message.success('修改成功');
+          this.fetchDeviceData();
+          this.materialDialogVisible = false;
+        }
+      }) .catch(error => {
+        console.error('修改失败:', error);
+      });
     },
     getOverallWorkerStatus(row) {
       if (row.workerList.length === 0) return '无人';
@@ -323,120 +306,133 @@ export default {
       });
       this.workerDialogVisible = true;
     },
-    addWorkers() {
-      if (this.newAddWorker.length > 0) {
-        return this.$message.warning('每次只能添加一个工人');
-      }
-      // 生成工号，格式为 W001、W002 等
-      const workerCount = this.currentWorkers.length;
-      const newWorkerId = workerCount + 1;
-      const formattedId = 'W' + String(newWorkerId).padStart(3, '0'); // 例如：W001, W002
+    // addWorkers() {
+    //   if (this.newAddWorker.length > 0) {
+    //     return this.$message.warning('每次只能添加一个工人');
+    //   }
+    //   // 生成工号，格式为 W001、W002 等
+    //   const workerCount = this.currentWorkers.length;
+    //   const newWorkerId = workerCount + 1;
+    //   const formattedId = 'W' + String(newWorkerId).padStart(3, '0'); // 例如：W001, W002
 
-      // 添加新工人
-      this.newAddWorker.push({
-        nameNumber: formattedId, // 工号，按照 W001 格式
-        userName: '', // 姓名
-        job: '操作员', // 岗位
-        status: '休息', // 默认状态为休息
-        worker_id: this.currentDevice.worker_id, // 设备ID
-      });
+    //   // 添加新工人
+    //   this.newAddWorker.push({
+    //     nameNumber: formattedId, // 工号，按照 W001 格式
+    //     userName: '', // 姓名
+    //     job: '操作员', // 岗位
+    //     status: '休息', // 默认状态为休息
+    //     worker_id: this.currentDevice.worker_id, // 设备ID
+    //   });
 
-      // this.$message.success('工人已添加，请记得点击保存按钮保存修改');
-    },
-    removeWorker(worker) {
-      // 检查是否只剩一名工人，如果是则不允许删除
-      if (this.currentWorkers.length <= 1) {
-        this.$message.warning('至少需要保留一名工人，不允许全部删除');
-        return;
-      }
+    //   // this.$message.success('工人已添加，请记得点击保存按钮保存修改');
+    // },
+    // removeWorker(worker) {
+    //   // 检查是否只剩一名工人，如果是则不允许删除
+    //   if (this.currentWorkers.length <= 1) {
+    //     this.$message.warning('至少需要保留一名工人，不允许全部删除');
+    //     return;
+    //   }
 
-      this.$confirm('确定要移除此工人吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        //请求deleteWorker接口
-        deleteWorker({
-          id: worker.id
-        }).then(response => {
-          if (response.status !== 0) {
-            this.$message.error('移除失败：' + response.message);
-            return;
-          } else {
-            const index = this.currentWorkers.findIndex(w => w.id === worker.id);
-            if (index !== -1) {
-              this.currentWorkers.splice(index, 1);
-            }
-          }
-        })
+    //   this.$confirm('确定要移除此工人吗?', '提示', {
+    //     confirmButtonText: '确定',
+    //     cancelButtonText: '取消',
+    //     type: 'warning'
+    //   }).then(() => {
+    //     //请求deleteWorker接口
+    //     deleteWorker({
+    //       id: worker.id
+    //     }).then(response => {
+    //       if (response.status !== 0) {
+    //         this.$message.error('移除失败：' + response.message);
+    //         return;
+    //       } else {
+    //         const index = this.currentWorkers.findIndex(w => w.id === worker.id);
+    //         if (index !== -1) {
+    //           this.currentWorkers.splice(index, 1);
+    //         }
+    //       }
+    //     })
 
-      });
-    },
-    saveWorkerChanges() {
-      // 在保存时将状态文本转换回数字
-      const updatedWorkers = this.currentWorkers.map(worker => {
-        const statusValue = worker.status === '休息' ? 0 : 1;
-        return {
-          id: worker.id,
-          nameNumber: worker.nameNumber,
-          userName: worker.userName,
-          job: worker.job,
-          status: statusValue
-        };
-      });
+    //   });
+    // },
+    // saveWorkerChanges() {
+    //   // 在保存时将状态文本转换回数字
+    //   const updatedWorkers = this.currentWorkers.map(worker => {
+    //     const statusValue = worker.status === '休息' ? 0 : 1;
+    //     return {
+    //       id: worker.id,
+    //       nameNumber: worker.nameNumber,
+    //       userName: worker.userName,
+    //       job: worker.job,
+    //       status: statusValue
+    //     };
+    //   });
 
-      // 调用API保存所有工人状态变更
-      updateWorkerNum({
-        deviceId: this.currentDevice.id, // 设备ID
-        workers: updatedWorkers
-      })
-        .then(response => {
-          if (response.status === 0) {
-            // 更新本地数据
-            this.currentDevice.workerList = this.currentWorkers.map(worker => {
-              const newWorker = { ...worker };
-              if (newWorker.status === '休息') {
-                newWorker.status = 0;
-              } else if (newWorker.status === '忙碌') {
-                newWorker.status = 1;
-              }
-              return newWorker;
-            });
-            this.workerDialogVisible = false;
-            // this.$message.success('工人信息已保存');
-          } else {
-            this.$message.error('保存失败：' + response.message);
-          }
-        })
-        .catch(error => {
-          console.error('保存工人信息失败:', error);
-          this.$message.error('保存工人信息失败，请稍后重试');
-        });
-      //调用addWorker
-      if (this.newAddWorker.length > 0) {
-        //数组中的status是汉字，需要转换成0/1
-        this.newAddWorker.forEach(worker => {
-          worker.status = worker.status === '休息' ? 0 : 1;
-        })
-        addWorker({
-          workers: this.newAddWorker
-        }).then(response => {
-          if (response.status !== 0) {
-            row.status = !row.status;
-          } else {
-            this.fetchDeviceData();
-          }
-          this.newAddWorker = [];
-        }).catch(error => {
-          console.error('添加工人失败:', error);
-          this.$message.error('添加工人失败，请稍后重试');
-        })
-      }
-    },
+    //   // 调用API保存所有工人状态变更
+    //   updateWorkerNum({
+    //     deviceId: this.currentDevice.id, // 设备ID
+    //     workers: updatedWorkers
+    //   })
+    //     .then(response => {
+    //       if (response.status === 0) {
+    //         // 更新本地数据
+    //         this.currentDevice.workerList = this.currentWorkers.map(worker => {
+    //           const newWorker = { ...worker };
+    //           if (newWorker.status === '休息') {
+    //             newWorker.status = 0;
+    //           } else if (newWorker.status === '忙碌') {
+    //             newWorker.status = 1;
+    //           }
+    //           return newWorker;
+    //         });
+    //         this.workerDialogVisible = false;
+    //         // this.$message.success('工人信息已保存');
+    //       } else {
+    //         this.$message.error('保存失败：' + response.message);
+    //       }
+    //     })
+    //     .catch(error => {
+    //       console.error('保存工人信息失败:', error);
+    //       this.$message.error('保存工人信息失败，请稍后重试');
+    //     });
+    //   //调用addWorker
+    //   if (this.newAddWorker.length > 0) {
+    //     //数组中的status是汉字，需要转换成0/1
+    //     this.newAddWorker.forEach(worker => {
+    //       worker.status = worker.status === '休息' ? 0 : 1;
+    //     })
+    //     // addWorker({
+    //     //   workers: this.newAddWorker
+    //     // }).then(response => {
+    //     //   if (response.status !== 0) {
+    //     //     row.status = !row.status;
+    //     //   } else {
+    //     //     this.fetchDeviceData();
+    //     //   }
+    //     //   this.newAddWorker = [];
+    //     // }).catch(error => {
+    //     //   console.error('添加工人失败:', error);
+    //     //   this.$message.error('添加工人失败，请稍后重试');
+    //     // })
+    //   }
+    // },
     // 新增处理状态变更的方法
     handleStatusChange(row) {
-      // 如果是从运行变为停止状态，弹出确认框
+      // 如果是从运行变为停止状态
       if (!row.status) {
+        // 检查是否只有一台设备在运行中
+        console.log('runningDevices',  this.deviceList);
+        const runningDevices = this.deviceList.filter(device => device.status == true);
+        console.log('runningDevices', runningDevices);
+        if (runningDevices.length < 1) {
+          // 如果只有一台或没有设备在运行，不允许关闭
+          this.$message.warning('至少需要保持一台设备运行，不允许关闭');
+          // 恢复开关状态
+          row.status = true;
+          return;
+        }
+
+        // 如果有多台设备在运行，弹出确认框
         this.$confirm('确定要停止该设备吗？停止后所有工人将被设置为休息状态。', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',

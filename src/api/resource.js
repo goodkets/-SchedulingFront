@@ -70,3 +70,11 @@ export function updateRawMaterialCount(data) {
     data
   })
 }
+
+export function manualExecuteSqlWrite(data) {
+  return request({
+    url: '/manualExecuteSqlWrite',
+    method: 'post',
+    data
+  })
+}

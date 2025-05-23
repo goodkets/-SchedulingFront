@@ -51,18 +51,64 @@
             <span>订单进度（高优先级的订单）</span>
           </div>
         </template>
-        <div v-for="(order, index) in orders" :key="index" class="order-item">
+        <div v-for="(order, index) in orders" :key="index" class="order-item" @click="handleView(order)">
           <div class="order-name">{{ order.order_no }}</div>
-          <div class="body">
+          <div class="body" >
             <el-progress
             :percentage="order.progress"
             :format="formatProgress"
-            :stroke-width="18"
+            :stroke-width="14"
             status-color="#409EFF"
           />
           </div>
         </div>
       </el-card>
+         <!--订单模态框 -->
+    <el-dialog title="订单详情" :visible.sync="dialogVisible" width="50%" :before-close="handleClose" >
+      <el-form :model="orderForm"  label-width="100px">
+        <el-form-item label="订单编号" prop="order_no">
+          <el-input
+          disabled
+            v-model="orderForm.order_no"
+          >
+          </el-input>
+        </el-form-item>
+        <el-form-item label="产品名称" prop="name">
+          <el-input disabled v-model="orderForm.name" trim></el-input>
+        </el-form-item>
+        <el-form-item label="数量:" prop="quantity">
+          <el-input-number v-model="orderForm.quantity" :min="1" disabled></el-input-number>
+        </el-form-item>
+        <el-form-item label="类型" prop="type">
+          <el-select disabled v-model="orderForm.type">
+            <el-option label="电容" value="电容"></el-option>
+            <el-option label="电阻" value="电阻"></el-option>
+            <el-option label="继电器" value="继电器"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="交付日期" prop="due_data">
+          <el-input
+            disabled
+            v-model="orderForm.due_data"
+          >
+          </el-input>
+        </el-form-item>
+        <el-form-item label="优先级" prop="priority">
+          <el-select disabled v-model="orderForm.priority">
+            <el-option label="高" value="1"></el-option>
+            <el-option label="中" value="0"></el-option>
+            <el-option label="低" value="-1"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select disabled v-model="orderForm.status" placeholder="请选择状态" >
+            <el-option label="未交付" value="-1"></el-option>
+            <el-option label="已交付" value="1"></el-option>
+            <el-option label="生产中" value="0"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
     </div>
   </div>
 </template>
@@ -80,13 +126,18 @@ export default {
       totalTasks: 10,
       completedTasks: 4,
       inProgressData: '4/10',
+      dialogVisible: false,
       // 模拟订单数据
-      orders: []
+      orders: [],
+      orderForm:{},
     };
   },
   created() {
     orderProgress().then(res => {
-      this.orders = res.data.list;
+      this.orders = res.data.list.map(order => ({
+      ...order,
+      progress: Number(order.progress) // 确保 progress 是数字
+    }));
       this.totalTasks = res.data.totalOrders
       this.completedTasks = res.data.deliveredOrders
       this.inProgressData = res.data.inProgressData
@@ -95,7 +146,15 @@ export default {
   methods: {
     formatProgress(percentage) {
       return percentage === 100 ? '完成' : `${percentage}%`;
-    }
+    },
+    handleView(order) {
+      console.log('查看订单:', order);
+      this.dialogVisible = true;
+      this.orderForm = order;
+    },
+    handleClose(done) {
+      this.dialogVisible = false;
+    },
   }
 };
 </script>
@@ -224,6 +283,7 @@ export default {
   transition: all 0.3s ease; /* 添加过渡效果 */
   padding: 10px;
   border-radius: 4px;
+  margin:30px 20px 20px 20px;
 }
 
 .order-item:hover {

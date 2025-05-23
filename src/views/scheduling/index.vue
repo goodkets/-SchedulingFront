@@ -1,6 +1,42 @@
 <template>
   <div class="scheduling-module">
-    <h2 class="module-title">排产结果</h2>
+    <div class="filter-container">
+      <h2 class="module-title">排产结果</h2>
+      <div class="radio-group">
+        <el-radio-group v-model="activeFilter" @change="handleFilterChange">
+          <el-radio-button label="all">全部</el-radio-button>
+          <el-radio-button
+            v-for="item in productFilters"
+            :key="item.value"
+            :label="item.value"
+          >
+            {{ item.label }}
+          </el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="table-container">
+        <el-button @click="showTestDialog" type="primary" size="medium">测试排产</el-button>
+        <el-dialog
+      title="测试完成订单时间"
+      :visible.sync="testDialogVisible"
+      width="30%"
+    >
+      <div>
+        <el-date-picker
+          v-model="testEndTime"
+          type="date"
+          placeholder="选择结束时间"
+          value-format="yyyy-MM-dd"
+        />
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="testDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleTestComplete">确定</el-button>
+      </span>
+    </el-dialog>
+      </div>
+    </div>
+
     <div class="table-container">
       <el-table :data="schedulingResults" stripe border>
         <el-table-column align="center" prop="name" label="产品名称" />
@@ -17,13 +53,20 @@
         </el-table-column>
       </el-table>
     </div>
-    <Pagination :total="total" :page="currentPage" :limit="pageSize" @pagination="handlePagination" />
+    <Pagination
+      :total="total"
+      :page="currentPage"
+      :limit="pageSize"
+      @pagination="handlePagination"
+    />
   </div>
 </template>
 
 <script>
 import { getSchedulingData } from '@/api/scheduling';
+import { getResourceData, manualExecuteSqlWrite } from '@/api/resource';
 import Pagination from '@/components/Pagination'
+
 export default {
   components: {
     Pagination,
@@ -34,47 +77,98 @@ export default {
       currentPage: 1,
       pageSize: 10,
       total: 0,
+      activeFilter: 'all',
+      productFilters: [],
+      allProducts: [],
+      testEndTime: '',
+      testDialogVisible: false,
     };
   },
   created() {
+    this.fetchProductFilters();
     this.fetchSchedulingData();
+    manualExecuteSqlWrite();
   },
   methods: {
+    showTestDialog() {
+      this.testEndTime = this.formatDateTime(new Date());
+      this.testDialogVisible = true;
+    },
+    async handleTestComplete() {
+      if (!this.testEndTime) {
+        this.$message.error('请选择测试完成时间');
+        return;
+      }
+    },
+        // 格式化日期时间
+        formatDateTime(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+
+      return `${year}-${month}-${day}`;
+    },
+    // 获取产品筛选列表
+    async fetchProductFilters() {
+      try {
+        const response = await getResourceData({page: 1, pageSize: 1000});
+        if (response.status === 0) {
+          this.allProducts = response.data.items;
+          this.productFilters = response.data.items.map(item => ({
+            value: item.name,
+            label: item.name
+          }));
+        }
+      } catch (error) {
+        console.error('获取产品列表失败:', error);
+        this.$message.error('获取产品列表失败');
+      }
+    },
+    // 处理筛选变化
+    handleFilterChange() {
+      this.currentPage = 1; // 重置到第一页
+      this.fetchSchedulingData();
+    },
     // 处理分页事件
     handlePagination({ page, limit }) {
-      this.currentPage = page
-      this.pageSize = limit
-      this.fetchSchedulingData()
+      this.currentPage = page;
+      this.pageSize = limit;
+      this.fetchSchedulingData();
     },
     async fetchSchedulingData() {
       try {
-        const response = await getSchedulingData({ page: this.currentPage, pageSize: this.pageSize });
+        const params = {
+          page: this.currentPage,
+          pageSize: this.pageSize
+        };
+
+        // 如果不是显示全部，添加产品名称筛选条件
+        if (this.activeFilter !== 'all') {
+          params.productName = this.activeFilter;
+        }
+
+        const response = await getSchedulingData(params);
         if(response.status === 0) {
-          // 获取原始数据
           let results = response.data.items;
 
-          // 定义状态优先级映射（生产中 > 未生产 > 已完成）
           const statusPriority = {
-            '0': 0,  // 生产中（进行中）- 最高优先级
-            '-1': 1, // 未生产（未开始）- 次高优先级
-            '1': 2   // 已完成 - 最低优先级
+            '0': 0,
+            '-1': 1,
+            '1': 2
           };
 
-          // 按状态优先级和结束时间排序
           results.sort((a, b) => {
-            // 首先按状态优先级排序
             const statusA = String(a.status);
             const statusB = String(b.status);
-
-            // 如果状态优先级不同，按优先级排序
             if (statusPriority[statusA] !== statusPriority[statusB]) {
               return statusPriority[statusA] - statusPriority[statusB];
             }
-
-            // 如果状态相同，按结束时间降序排序
             const endTimeA = new Date(a.end_time);
             const endTimeB = new Date(b.end_time);
-            return endTimeB - endTimeA; // 降序排列
+            return endTimeB - endTimeA;
           });
 
           this.schedulingResults = results;
@@ -85,9 +179,7 @@ export default {
         this.$message.error('获取排产数据失败，请稍后重试');
       }
     },
-    // 根据状态返回不同的标签类型
     getStatusType(status) {
-      // 统一使用字符串比较
       status = String(status);
       switch (status) {
         case '-1':
@@ -100,9 +192,7 @@ export default {
           return 'default';
       }
     },
-    // 根据状态返回不同的文本描述
     getStatusText(status) {
-      // 统一使用字符串比较
       status = String(status);
       switch (status) {
         case '-1':
@@ -127,11 +217,23 @@ export default {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
+.filter-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
 .module-title {
   font-size: 20px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 20px;
+  margin-right: 20px;
+}
+
+.radio-group {
+  margin: 10px 0;
 }
 
 .table-container {
@@ -159,7 +261,6 @@ export default {
   border-radius: 4px;
 }
 
-// 如果你想自定义颜色，可以添加以下样式
 .el-tag.info {
   background-color: #e6f7ff;
   border-color: #91d5ff;
@@ -183,6 +284,18 @@ export default {
   border-color: #d9d9d9;
   color: #222;
 }
-</style>
 
-<style lang="scss" scoped></style>
+@media (max-width: 768px) {
+  .filter-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .radio-group {
+    margin-top: 10px;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+</style>

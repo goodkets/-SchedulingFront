@@ -70,13 +70,30 @@ export const constantRoutes = [
   {
     path: '/resource',
     component: Layout,
+    alwaysShow: true,
+    name:'resource',
+    meta: {
+      title: '设备管理',
+      icon: 'tree',
+      permissions: ['all','resource']
+    },
     children: [
       {
-        path: 'resource',
+        path: 'index',
         component: () => import('@/views/resource/index'),
         name: 'resource',
         meta: {
-          title: '资源管理',
+          title: '机床管理',
+          icon: 'tree',
+          permissions: ['all', 'resource']
+        }
+      },
+      {
+        path: 'resourceDetail',
+        component: () => import('@/views/resource/totalrawmaterials/index.vue'),
+        name:'resourceDetail',
+        meta: {
+          title: '材料管理',
           icon: 'tree',
           permissions: ['all', 'resource']
         }
