@@ -41,7 +41,7 @@
         </template>
         <!-- 添加父容器并设置宽度为 100% -->
         <div class="chart-wrapper">
-          <LineMarker />
+          <LineMarker   :trueCount="trueCount" />
         </div>
       </el-card>
       <el-card class="module-card">
@@ -59,6 +59,7 @@
             :format="formatProgress"
             :stroke-width="14"
             status-color="#409EFF"
+            :trueCount="trueCount"
           />
           </div>
         </div>
@@ -130,6 +131,7 @@ export default {
       // 模拟订单数据
       orders: [],
       orderForm:{},
+      trueCount:0
     };
   },
   created() {
@@ -141,6 +143,7 @@ export default {
       this.totalTasks = res.data.totalOrders
       this.completedTasks = res.data.deliveredOrders
       this.inProgressData = res.data.inProgressData
+      this.trueCount = res.data.trueCount
     });
   },
   methods: {

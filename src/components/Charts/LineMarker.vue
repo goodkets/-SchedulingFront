@@ -25,6 +25,10 @@ export default {
       type: String,
       default: '50vh'
     },
+    trueCount: {
+      type: Number,
+      default: 0
+    }
   },
   data() {
     return {
@@ -44,6 +48,12 @@ export default {
     this.chart.dispose()
     this.chart = null
   },
+  watch: {
+    trueCount(newVal) {
+      console.log('trueCount 发生变化，新值为:', newVal);
+      this.fetchData();
+    }
+  },
   methods: {
     initChart() {
       this.chart = echarts.init(document.getElementById(this.id))
@@ -51,6 +61,7 @@ export default {
     },
     async fetchData() {
       try {
+        console.log('接收到的 trueCount 值:', this.trueCount); // 添加调试信息
         // 生成近七天日期
         this.xData = this.getLastSevenDays()
         // 模拟获取近七天正在运行的机器数据
@@ -62,7 +73,7 @@ export default {
           { date: this.xData[3], deviceCount: 1 },
           { date: this.xData[4], deviceCount: 2 },
           { date: this.xData[5], deviceCount: 3 },
-          { date: this.xData[6], deviceCount: 3 }
+          { date: this.xData[6], deviceCount: this.trueCount }
         ]
         this.yData = mockData.map(item => item.deviceCount)
         this.setChartOption()
@@ -83,6 +94,7 @@ export default {
       return dates
     },
     setChartOption() {
+      this.chart.clear(); // 清除旧的图表数据
       this.chart.setOption({
         backgroundColor: '#394056',
         title: {

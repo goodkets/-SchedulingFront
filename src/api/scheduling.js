@@ -7,3 +7,11 @@ export function getSchedulingData(data) {
     data
   })
 }
+//排产状态修改
+export function updateSchedulingData(data) {
+  return request({
+    url: '/updateSchedulingData',
+    method: 'post',
+    data
+  })
+}

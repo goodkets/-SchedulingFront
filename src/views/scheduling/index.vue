@@ -63,8 +63,8 @@
 </template>
 
 <script>
-import { getSchedulingData } from '@/api/scheduling';
-import { getResourceData, manualExecuteSqlWrite } from '@/api/resource';
+import { getSchedulingData, updateSchedulingData } from '@/api/scheduling';
+import { getResourceData, manualExecuteSqlWrite, updateRawMaterialCount, getRawMaterialCount } from '@/api/resource';
 import Pagination from '@/components/Pagination'
 
 export default {
@@ -87,7 +87,7 @@ export default {
   created() {
     this.fetchProductFilters();
     this.fetchSchedulingData();
-    manualExecuteSqlWrite();
+    // manualExecuteSqlWrite();
   },
   methods: {
     showTestDialog() {
@@ -99,6 +99,78 @@ export default {
         this.$message.error('请选择测试完成时间');
         return;
       }
+      // 存储时间到本地
+      localStorage.setItem('testEndTime', this.testEndTime);
+      this.testDialogVisible = false;
+
+      const schedulingUpdates = [];
+      const rawMaterialConsumptions = {};
+
+      // 遍历排产数据
+      for (const item of this.schedulingResults) {
+        // 仅处理正在进行中的排产记录
+        if (item.status == 0) {
+          const planEndTime = new Date(item.end_time);
+          const testTime = new Date(this.testEndTime);
+
+          // 检查这里的条件是否满足
+          if (planEndTime <= testTime) {
+            // 修改状态为已完成
+            item.status = 1;
+            // 收集需要更新的排产数据
+            schedulingUpdates.push({ id: item.id, status: 1, process: '无', orderNo: item.orderNo });
+
+            // 根据设备排产数据中的 device 去匹配设备中的 name
+            const device = this.allProducts.find(product => product.name === item.device);
+            if (device) {
+              // 计算每种原材料的消耗
+              device.rawList.forEach(raw => {
+                const consumption = raw.num * item.quantity;
+                if (rawMaterialConsumptions[raw.name]) {
+                  rawMaterialConsumptions[raw.name] += consumption;
+                } else {
+                  rawMaterialConsumptions[raw.name] = consumption;
+                }
+              });
+            }
+          }
+        }
+      }
+
+      try {
+        // 获取总原材料数据
+        const rawMaterialResponse = await getRawMaterialCount();
+        const rawMaterialData = rawMaterialResponse.data; // 假设接口返回的数据结构中有 data 字段
+
+        const rawMaterialUpdates = [];
+        // 计算剩余原材料数据
+        for (const rawMaterial of rawMaterialData) {
+          const remaining = rawMaterial.total - (rawMaterialConsumptions[rawMaterial.name] || 0);
+          rawMaterialUpdates.push({
+            id: rawMaterial.id, // 使用接口返回的 id
+            name: rawMaterial.name,
+            total: remaining,
+            unit: rawMaterial.unit // 使用接口返回的单位
+          });
+        }
+        // 统一发送排产数据更新请求
+        if (schedulingUpdates.length > 0) {
+          await updateSchedulingData(schedulingUpdates);
+        }
+        // 统一发送原料数据更新请求
+        if (rawMaterialUpdates.length > 0) {
+          await updateRawMaterialCount(rawMaterialUpdates);
+        }
+
+        // 执行 SQL 写入操作
+        manualExecuteSqlWrite();
+      } catch (error) {
+        console.error('更新排产数据或原料数量失败:', error);
+        this.$message.error('更新排产数据或原料数量失败，请稍后重试');
+      }
+
+      // 重新获取排产数据
+      this.fetchSchedulingData();
     },
         // 格式化日期时间
         formatDateTime(date) {
@@ -155,9 +227,9 @@ export default {
           let results = response.data.items;
 
           const statusPriority = {
-            '0': 0,
-            '-1': 1,
-            '1': 2
+            '0': 0, // 进行中
+            '-1': 1, // 未开始
+            '1': 2  // 已完成
           };
 
           results.sort((a, b) => {
@@ -166,12 +238,14 @@ export default {
             if (statusPriority[statusA] !== statusPriority[statusB]) {
               return statusPriority[statusA] - statusPriority[statusB];
             }
-            const endTimeA = new Date(a.end_time);
-            const endTimeB = new Date(b.end_time);
-            return endTimeB - endTimeA;
+            // 根据计划开始时间降序排列
+            const startTimeA = new Date(a.start_time);
+            const startTimeB = new Date(b.start_time);
+            return startTimeA - startTimeB;
           });
 
           this.schedulingResults = results;
+          console.log('获取到的排产数据:', this.schedulingResults); // 添加日志检查数据
           this.total = response.data.pagination.total;
         }
       } catch (error) {
@@ -299,3 +373,4 @@ export default {
   }
 }
 </style>
+<mcfile name="index.vue" path="e:\project\Scheduling\-SchedulingFront\src\views\scheduling\index.vue"></mcfile>
